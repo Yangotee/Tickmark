@@ -40,7 +40,7 @@ const REDACT_PATHS = [
 export const baseLogger: Logger = pino({
   level: env.isProduction ? 'info' : 'debug',
   redact: { paths: REDACT_PATHS, censor: '[REDACTED]' },
-  base: { service: 'lumora-services' },
+  base: { service: 'tickmark-api' },
   timestamp: pino.stdTimeFunctions.isoTime,
 });
 

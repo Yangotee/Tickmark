@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = [
+  "contracts/manufacturer-registry",
+  "contracts/batch-registry",
+  "contracts/scan-ledger",
+  "contracts/bounty-vault",
+  "contracts/common",
+]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+version = "0.1.0"
+
+[workspace.dependencies]
+soroban-sdk = "22.0.0"
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+lto = true
+panic = "abort"
+codegen-units = 1
+strip = true

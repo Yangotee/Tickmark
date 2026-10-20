@@ -27,7 +27,7 @@
     "swagger-ui-express": "^5.0.1",
     "zod": "^4.6.5"
   },
-  "description": "lumora-services backend API built with Express and TypeScript",
+  "description": "Tickmark API built with Express and TypeScript",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/bcrypt": "^6.0.0",
@@ -68,7 +68,7 @@
     ]
   },
   "main": "dist/index.js",
-  "name": "lumora-services",
+  "name": "@tickmark/api",
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },

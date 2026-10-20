@@ -19,7 +19,7 @@ apiRouter.use(
   '/api/docs',
   swaggerUi.serve,
   swaggerUi.setup(openApiSpec, {
-    customSiteTitle: 'Lumora Services API — v1',
+    customSiteTitle: 'Tickmark API — v1',
   }),
 );
 apiRouter.use(healthRouter);

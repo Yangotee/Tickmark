@@ -4,7 +4,7 @@
 
 Manufacturers register product batches on Stellar. Every pack carries a one-time code. Buyers verify it in seconds from any phone. When something looks fake, Tickmark's Clone Radar spots the pattern, and reporters earn a USDC bounty for evidence packs that regulators can act on.
 
-![License: MIT](https://img.shields.io/badge/License-MIT-green) ![Network: Stellar](https://img.shields.io/badge/Network-Stellar-blue) ![Contracts: Soroban](https://img.shields.io/badge/Contracts-Soroban-purple) ![Monorepo: pnpm](https://img.shields.io/badge/Monorepo-pnpm-orange) ![Build: Turborepo](https://img.shields.io/badge/Build-Turborepo-red)
+![License: MIT](https://img.shields.io/badge/License-MIT-green) ![Network: Stellar](https://img.shields.io/badge/Network-Stellar-blue) ![Contracts: Soroban](https://img.shields.io/badge/Contracts-Soroban-purple) ![Monorepo: pnpm](https://img.shields.io/badge/Monorepo-pnpm-orange)
 
 > **Status:** early design and Testnet development. The function tables, invariants, and error codes below describe the target interface. Items marked _planned_ are not yet implemented.
 
@@ -94,13 +94,14 @@ When a buyer reports a suspected fake, Tickmark assembles an **evidence pack**: 
 
 ```
 tickmark/
+├── src/                # @tickmark/api - Existing API service (Express + TypeScript)
+├── package.json        # Root API workspace package
 ├── packages/
 │   ├── contracts/      # @tickmark/contracts - Soroban smart contracts (Rust)
 │   ├── labelkit/       # @tickmark/labelkit  - Manufacturer CLI: code generation, Merkle trees, label files
 │   ├── gateway/        # @tickmark/gateway   - SMS, USSD, and API verification gateway (TypeScript)
 │   ├── radar/          # @tickmark/radar     - Clone Radar rules engine (TypeScript)
 │   ├── lens/           # @tickmark/lens      - AI packaging check, code reader, triage, summaries
-│   ├── api/            # @tickmark/api       - Public REST API (Node.js)
 │   ├── sdk/            # @tickmark/sdk       - TypeScript SDK for contracts and API
 │   └── app/            # @tickmark/app       - Buyer PWA, manufacturer dashboard, reviewer portal (Next.js)
 ├── docs/               # Architecture, threat model, code format spec, SECURITY_MODEL.md
@@ -108,7 +109,6 @@ tickmark/
 ├── scripts/            # Testnet bootstrap, seed data, deploy helpers
 ├── audits/             # Smart contract audit reports
 ├── pnpm-workspace.yaml
-├── turbo.json
 └── README.md           <- you are here
 ```
 
@@ -572,33 +572,27 @@ pnpm install
 cp .env.example .env     # add Stellar keys, phone-hash pepper, storage config
 ```
 
-### Try a full flow locally
+### Run the available services locally
 
 ```bash
-# 1. Generate and register a sample batch (Testnet)
-pnpm --filter @tickmark/labelkit build
-node packages/labelkit/dist/cli.js codes generate --count 1000 --out ./demo-batch
-node packages/labelkit/dist/cli.js batch register ./demo-batch --product demo --expiry 2028-01-01
-
-# 2. Start the gateway and simulator
-pnpm --filter @tickmark/gateway dev
-pnpm --filter @tickmark/app dev          # open the simulator at /simulator
+pnpm --filter @tickmark/api dev
+pnpm --filter @tickmark/app dev
 ```
 
 ### Run in development
 
 ```bash
-pnpm dev                                   # everything via Turborepo
-pnpm --filter @tickmark/radar dev          # Clone Radar against a synthetic scan log
-pnpm --filter @tickmark/api dev            # API only
+pnpm --filter @tickmark/api dev
+pnpm --filter @tickmark/app dev
 ```
 
 ### Test
 
 ```bash
 cd packages/contracts && cargo test
-pnpm turbo test
-pnpm turbo lint
+cd ../.. && pnpm --filter @tickmark/api test
+pnpm --filter @tickmark/api lint
+pnpm --filter @tickmark/app run build
 ```
 
 ### Deploy contracts to Testnet
@@ -667,8 +661,9 @@ Every issue has a description, acceptance criteria, and a pointer to the relevan
 
 ```bash
 git checkout -b feat/your-feature
-pnpm turbo test
-pnpm turbo lint
+pnpm --filter @tickmark/api test
+pnpm --filter @tickmark/api lint
+pnpm --filter @tickmark/app run build
 # open a PR against main
 ```
 

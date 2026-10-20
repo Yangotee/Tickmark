@@ -18,12 +18,12 @@ export const openApiSpec = swaggerJsdoc({
   definition: {
     openapi: '3.0.3',
     info: {
-      title: 'Lumora Services API (v1)',
+      title: 'Tickmark API (v1)',
       version: '1.0.0',
       description:
-        'Backend API for the Lumora creative marketplace. All endpoints are served under `/api/v1`; ' +
+        'Backend API for Tickmark. All endpoints are served under `/api/v1`; ' +
         'authentication uses a Bearer access token with refresh-token rotation.',
-      contact: { name: 'Lumora Services' },
+      contact: { name: 'Tickmark' },
     },
     // Paths in route annotations are absolute (e.g. `/api/v1/auth/login`), so
     // the server root is `/` — otherwise "Try it out" would double the prefix.

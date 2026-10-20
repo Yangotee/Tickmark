@@ -1,4 +1,4 @@
-# Contributing to lumora-services
+# Contributing to Tickmark
 
 This document explains how the repository is organized and the conventions every
 change is expected to follow. It is the source of truth for structure and style
