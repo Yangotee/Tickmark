@@ -137,6 +137,36 @@ describe('artwork detail with related items', () => {
     await expect(getArtworkDetail(artworkId, undefined)).rejects.toThrow(AppError);
   });
 
+  it('hides unpublished artworks from anyone except their owner', async () => {
+    prismaMock.artwork.findUnique.mockResolvedValue({
+      id: artworkId,
+      userId: 'artist-1',
+      published: false,
+    });
+
+    await expect(getArtworkDetail(artworkId, 'buyer-1')).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+    expect(prismaMock.artworkMedia.findMany).not.toHaveBeenCalled();
+
+    prismaMock.artwork.findUnique.mockResolvedValue({
+      id: artworkId,
+      userId: 'artist-1',
+      category: 'PHOTOGRAPHY',
+      published: false,
+    });
+    prismaMock.artworkMedia.findMany.mockResolvedValue([]);
+    prismaMock.artwork.findMany.mockResolvedValue([]);
+    prismaMock.review.aggregate.mockResolvedValue({
+      _avg: { rating: null },
+      _count: { rating: 0 },
+    });
+
+    await expect(getArtworkDetail(artworkId, 'artist-1')).resolves.toMatchObject({
+      artwork: { published: false },
+    });
+  });
+
   it('assembles media ids, related artworks, and the review summary', async () => {
     const artwork = {
       id: artworkId,
