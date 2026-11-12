@@ -149,7 +149,11 @@ function parseOffsetCursor(cursor: string | undefined): number {
   if (match === null) {
     throw invalidCursor();
   }
-  return Number.parseInt(match[1]!, 10);
+  const offset = Number.parseInt(match[1]!, 10);
+  if (!Number.isSafeInteger(offset)) {
+    throw invalidCursor();
+  }
+  return offset;
 }
 
 function browseCacheKey(
