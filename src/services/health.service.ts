@@ -80,7 +80,7 @@ function checkRedis(): Promise<'ok' | 'error' | 'not_configured'> {
 export async function getReadinessStatus(): Promise<ReadinessStatus> {
   const database = await checkDatabase();
   const redis = await checkRedis();
-  const ready = database === 'ok';
+  const ready = database === 'ok' && redis !== 'error';
 
   return {
     status: ready ? 'ready' : 'unavailable',
