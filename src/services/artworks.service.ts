@@ -186,6 +186,9 @@ export async function getArtworkDetail(
   viewerId: string | undefined,
 ): Promise<ArtworkDetail> {
   const artwork = await getArtworkById(artworkId);
+  if (!artwork.published && artwork.userId !== viewerId) {
+    throw new AppError('NOT_FOUND', 'Artwork not found');
+  }
 
   const [mediaLinks, relatedArtworks, reviewAggregate] = await Promise.all([
     prisma.artworkMedia.findMany({ where: { artworkId }, orderBy: { sort: 'asc' } }),
