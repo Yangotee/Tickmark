@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const { prismaMock, redisMock, envMock, enqueueEmailMock } = vi.hoisted(() => {
   const notification = {
     create: vi.fn(),
-    createMany: vi.fn(),
+    createManyAndReturn: vi.fn(),
     findMany: vi.fn(),
     findUnique: vi.fn(),
     update: vi.fn(),
@@ -105,14 +105,17 @@ describe('createNotification (#841)', () => {
 
 describe('createNotifications batch (#841)', () => {
   it('creates one row per recipient in a single round-trip', async () => {
-    prismaMock.notification.createMany.mockResolvedValue({ count: 2 });
+    prismaMock.notification.createManyAndReturn.mockResolvedValue([
+      makeNotification({ id: 'notif-1', userId: 'u1' }),
+      makeNotification({ id: 'notif-2', userId: 'u2' }),
+    ]);
 
     const count = await createNotifications(['u1', 'u2'], 'COMMISSION_UPDATE', {
       commissionId: 'c1',
     });
 
     expect(count).toBe(2);
-    expect(prismaMock.notification.createMany).toHaveBeenCalledWith({
+    expect(prismaMock.notification.createManyAndReturn).toHaveBeenCalledWith({
       data: [
         { userId: 'u1', type: 'COMMISSION_UPDATE', data: { commissionId: 'c1' } },
         { userId: 'u2', type: 'COMMISSION_UPDATE', data: { commissionId: 'c1' } },
@@ -124,7 +127,29 @@ describe('createNotifications batch (#841)', () => {
   it('short-circuits for an empty recipient list', async () => {
     const count = await createNotifications([], 'SYSTEM');
     expect(count).toBe(0);
-    expect(prismaMock.notification.createMany).not.toHaveBeenCalled();
+    expect(prismaMock.notification.createManyAndReturn).not.toHaveBeenCalled();
+  });
+
+  it('queues an email for each inserted notification when SMTP is configured', async () => {
+    envMock.smtp = { host: 'smtp.test', port: 587 };
+    prismaMock.notification.createManyAndReturn.mockResolvedValue([
+      makeNotification({ id: 'notif-1', userId: 'u1' }),
+      makeNotification({ id: 'notif-2', userId: 'u2' }),
+    ]);
+    prismaMock.user.findUnique.mockImplementation(({ where: { id } }) =>
+      Promise.resolve({ email: `${id}@example.com` }),
+    );
+
+    const count = await createNotifications(['u1', 'u2'], 'SYSTEM', { message: 'New update' });
+
+    expect(count).toBe(2);
+    expect(enqueueEmailMock).toHaveBeenCalledTimes(2);
+    expect(enqueueEmailMock).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'u1@example.com', notificationId: 'notif-1' }),
+    );
+    expect(enqueueEmailMock).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'u2@example.com', notificationId: 'notif-2' }),
+    );
   });
 });
 
