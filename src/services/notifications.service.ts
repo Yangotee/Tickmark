@@ -146,8 +146,11 @@ async function maybeEnqueueEmail(notification: Notification): Promise<void> {
       notificationId: notification.id,
       data: emailData,
     });
-  } catch {
-    // Email is best-effort; the DB row is the source of truth.
+  } catch (error) {
+    logger.warn('notification-email: enqueue failed; notification remains available in the app', {
+      notificationId: notification.id,
+      message: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
