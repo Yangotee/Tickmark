@@ -12,9 +12,15 @@ vi.mock('@/utils', () => ({ logger: loggerMock }));
 import { AppError } from './app-error.middleware';
 import { errorHandler } from './error-handler.middleware';
 
-function run(err: unknown): void {
+function run(err: unknown) {
   const res = { headersSent: false, status: vi.fn().mockReturnThis(), json: vi.fn() };
-  errorHandler(err, { id: 'req-1' } as Request, res as unknown as Response, vi.fn() as NextFunction);
+  errorHandler(
+    err,
+    { id: 'req-1' } as Request,
+    res as unknown as Response,
+    vi.fn() as NextFunction,
+  );
+  return res;
 }
 
 function loggedStack(): unknown {
@@ -69,6 +75,22 @@ describe('errorHandler stack trace logging', () => {
 
   it('does not log a stack for 4xx AppErrors', () => {
     run(new AppError('NOT_FOUND', 'missing'));
+    expect(loggerMock.error).not.toHaveBeenCalled();
+  });
+
+  it('returns a client error for malformed JSON without exposing parser details', () => {
+    const error = Object.assign(new SyntaxError('Unexpected token'), {
+      status: 400,
+      type: 'entity.parse.failed',
+    });
+
+    const response = run(error);
+
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.json).toHaveBeenCalledWith({
+      success: false,
+      error: { code: 'BAD_REQUEST', message: 'Request body must contain valid JSON.' },
+    });
     expect(loggerMock.error).not.toHaveBeenCalled();
   });
 });

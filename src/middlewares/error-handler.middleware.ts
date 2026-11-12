@@ -81,6 +81,21 @@ export function errorHandler(
     return;
   }
 
+  if (
+    err instanceof SyntaxError &&
+    'status' in err &&
+    err.status === 400 &&
+    'type' in err &&
+    err.type === 'entity.parse.failed'
+  ) {
+    logger.warn('Invalid JSON request body', { reqId: req.id });
+    res.status(400).json({
+      success: false,
+      error: { code: 'BAD_REQUEST', message: 'Request body must contain valid JSON.' },
+    });
+    return;
+  }
+
   const error = err instanceof Error ? err : new Error(String(err));
   logger.error('Unhandled request error', {
     reqId: req.id,
