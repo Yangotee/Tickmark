@@ -109,7 +109,7 @@ export async function createNotifications(
   if (userIds.length === 0) {
     return 0;
   }
-  const result = await prisma.notification.createMany({
+  const notifications = await prisma.notification.createManyAndReturn({
     data: userIds.map((userId) => ({
       userId,
       type,
@@ -117,7 +117,8 @@ export async function createNotifications(
     })),
   });
   await Promise.all(userIds.map((userId) => invalidateUnreadCount(userId)));
-  return result.count;
+  await Promise.all(notifications.map(maybeEnqueueEmail));
+  return notifications.length;
 }
 
 /** Fire-and-forget email fan-out; silently skipped without SMTP (#841). */
