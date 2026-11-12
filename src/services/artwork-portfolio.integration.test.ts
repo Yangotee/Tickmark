@@ -195,7 +195,12 @@ describe('artwork detail with related items', () => {
     expect(detail.reviewSummary).toEqual({ averageRating: 4.5, count: 10 });
     expect(prismaMock.artwork.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ category: 'PHOTOGRAPHY', id: { not: artworkId } }),
+        where: expect.objectContaining({
+          category: 'PHOTOGRAPHY',
+          published: true,
+          sold: false,
+          id: { not: artworkId },
+        }),
       }),
     );
   });
