@@ -99,9 +99,7 @@ describe('search ranking', () => {
     expect(first.total).toBe(5);
     expect(first.hasNext).toBe(true);
 
-    prismaMock.$queryRaw
-      .mockResolvedValueOnce([{ count: 5 }])
-      .mockResolvedValueOnce([{ id: 'e' }]);
+    prismaMock.$queryRaw.mockResolvedValueOnce([{ count: 5 }]).mockResolvedValueOnce([{ id: 'e' }]);
 
     const last = await searchArtworks('pagination-last', {}, 3, 2);
     expect(last.total).toBe(5);
@@ -215,6 +213,9 @@ describe('browse pagination per sort order', () => {
   it('rejects an id cursor for a price sort and an offset cursor for newest', async () => {
     await expect(browseArtworks({}, 'price_asc', 'some-artwork-id', 2)).rejects.toThrow(AppError);
     await expect(browseArtworks({}, 'newest', 'o:2', 2)).rejects.toThrow(AppError);
+    await expect(browseArtworks({}, 'price_asc', 'o:9007199254740992', 2)).rejects.toThrow(
+      AppError,
+    );
   });
 });
 
