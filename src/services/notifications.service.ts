@@ -7,13 +7,14 @@
  * fan-out (queued, never in-request) when SMTP is configured.
  */
 
-import type { Notification } from '@prisma/client';
+import { Prisma, type Notification } from '@prisma/client';
 
 import { env } from '@/config';
 import { AppError } from '@/middlewares';
 import { enqueueNotificationEmail } from '@/queues';
 import { cached, invalidateKeys } from '@/services/cache.service';
 import { prisma } from '@/services/prisma.service';
+import { logger } from '@/utils';
 
 /** Notification types the platform emits. Stored as a plain string so
  * legacy rows (e.g. COMMISSION_REQUEST) stay readable. */
@@ -30,7 +31,7 @@ export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 export interface CreateNotificationInput {
   readonly userId: string;
   readonly type: NotificationType;
-  readonly data?: Record<string, unknown>;
+  readonly data?: Prisma.InputJsonObject;
 }
 
 export interface PublicNotification {
@@ -103,7 +104,7 @@ export async function createNotification(input: CreateNotificationInput): Promis
 export async function createNotifications(
   userIds: readonly string[],
   type: NotificationType,
-  data?: Record<string, unknown>,
+  data?: Prisma.InputJsonObject,
 ): Promise<number> {
   if (userIds.length === 0) {
     return 0;
@@ -124,6 +125,13 @@ async function maybeEnqueueEmail(notification: Notification): Promise<void> {
   if (env.smtp === undefined) {
     return;
   }
+  const emailData = notification.data ?? {};
+  if (typeof emailData !== 'object' || Array.isArray(emailData)) {
+    logger.warn('notification-email: skipped non-object notification data', {
+      notificationId: notification.id,
+    });
+    return;
+  }
   try {
     const user = await prisma.user.findUnique({
       where: { id: notification.userId },
@@ -136,7 +144,7 @@ async function maybeEnqueueEmail(notification: Notification): Promise<void> {
       to: user.email,
       type: notification.type,
       notificationId: notification.id,
-      data: (notification.data ?? {}) as Record<string, unknown>,
+      data: emailData,
     });
   } catch {
     // Email is best-effort; the DB row is the source of truth.

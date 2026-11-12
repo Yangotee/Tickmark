@@ -572,7 +572,7 @@ export interface CancelCommissionInput {
   readonly reason: string;
 }
 
-export interface CommissionRefund {
+export interface CommissionRefundSummary {
   /** True when the commission was funded and the client is owed a refund. */
   readonly required: boolean;
   readonly amount: string | null;
@@ -581,7 +581,7 @@ export interface CommissionRefund {
 
 export interface CommissionCancellation {
   readonly commission: Commission;
-  readonly refund: CommissionRefund;
+  readonly refund: CommissionRefundSummary;
 }
 
 /**
@@ -648,7 +648,7 @@ export async function cancelCommission(
       where: { commissionId, confirmed: true },
       orderBy: { createdAt: 'desc' },
     });
-    const refund: CommissionRefund =
+    const refund: CommissionRefundSummary =
       funding === null
         ? { required: false, amount: null, asset: null }
         : { required: true, amount: funding.amount.toFixed(2), asset: funding.asset };

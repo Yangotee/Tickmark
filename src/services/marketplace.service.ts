@@ -69,17 +69,13 @@ const VERIFIED_ARTISTS_CACHE_TTL_SECONDS = 15 * 60;
  * the correct behaviour when no artist is verified yet.
  */
 async function verifiedArtistUserIds(): Promise<string[]> {
-  return cached(
-    'marketplace:verified-artist-ids',
-    VERIFIED_ARTISTS_CACHE_TTL_SECONDS,
-    async () => {
-      const profiles = await prisma.artistProfile.findMany({
-        where: { verified: true },
-        select: { userId: true },
-      });
-      return profiles.map((p) => p.userId);
-    },
-  );
+  return cached('marketplace:verified-artist-ids', VERIFIED_ARTISTS_CACHE_TTL_SECONDS, async () => {
+    const profiles = await prisma.artistProfile.findMany({
+      where: { verified: true },
+      select: { userId: true },
+    });
+    return profiles.map((p) => p.userId);
+  });
 }
 
 /**
@@ -162,7 +158,6 @@ function browseCacheKey(
   cursor: string | undefined,
   limit: number,
 ): string {
-  return `marketplace:browse:${stableStringify({ filters, sort, cursor, limit })}`;
   // `verifiedOnly` is always materialised (true/false, never undefined) so
   // "filter off" and "filter absent" share one cache slot instead of
   // producing two keys for the same result set (#865).
@@ -170,7 +165,7 @@ function browseCacheKey(
     ...filters,
     verifiedOnly: filters.verifiedOnly === true,
   };
-  return `marketplace:browse:${JSON.stringify({ filters: normalized, sort, cursor, limit })}`;
+  return `marketplace:browse:${stableStringify({ filters: normalized, sort, cursor, limit })}`;
 }
 
 export async function browseArtworks(
@@ -189,7 +184,6 @@ export async function browseArtworks(
     }
   }
 
-  const where = await buildWhere(filters);
   const offsetMode = usesOffsetCursor(sort);
   if (!offsetMode && cursor?.startsWith(OFFSET_CURSOR_PREFIX)) {
     throw invalidCursor();

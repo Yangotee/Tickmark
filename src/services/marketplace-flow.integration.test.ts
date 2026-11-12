@@ -25,7 +25,7 @@ const { prismaMock, redisMock, tryGetRedisClientMock } = vi.hoisted(() => {
     zrevrange: vi.fn(),
     zincrby: vi.fn(),
     zcard: vi.fn(),
-    keys: vi.fn().mockResolvedValue([]),
+    scan: vi.fn().mockResolvedValue(['0', []]),
     del: vi.fn(),
   };
   return { prismaMock: prisma, redisMock: redis, tryGetRedisClientMock: vi.fn() };
@@ -43,7 +43,7 @@ import { toggleArtworkSave } from './saves.service';
 beforeEach(() => {
   vi.clearAllMocks();
   tryGetRedisClientMock.mockReturnValue(redisMock);
-  redisMock.keys.mockResolvedValue([]);
+  redisMock.scan.mockResolvedValue(['0', []]);
 });
 
 describe('browse -> search -> filter -> artwork detail', () => {
@@ -59,7 +59,7 @@ describe('browse -> search -> filter -> artwork detail', () => {
     expect(browsePage.items).toEqual([artwork]);
 
     redisMock.get.mockResolvedValue(null);
-    prismaMock.$queryRaw.mockResolvedValueOnce([artwork]);
+    prismaMock.$queryRaw.mockResolvedValueOnce([{ count: 1 }]).mockResolvedValueOnce([artwork]);
 
     const searchPage = await searchArtworks('sunset', { category: 'PHOTOGRAPHY' }, 1, 20);
     expect(searchPage.items).toEqual([artwork]);
@@ -72,14 +72,16 @@ describe('browse -> search -> filter -> artwork detail', () => {
   });
 
   it('search results are consistent across repeated requests (served from cache)', async () => {
-    redisMock.get.mockResolvedValueOnce(null).mockResolvedValueOnce(JSON.stringify([artwork]));
-    prismaMock.$queryRaw.mockResolvedValueOnce([artwork]);
+    redisMock.get
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(JSON.stringify({ items: [artwork], total: 1 }));
+    prismaMock.$queryRaw.mockResolvedValueOnce([{ count: 1 }]).mockResolvedValueOnce([artwork]);
 
     const first = await searchArtworks('sunset', {}, 1, 20);
     const second = await searchArtworks('sunset', {}, 1, 20);
 
     expect(second.items).toEqual(first.items);
-    expect(prismaMock.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(prismaMock.$queryRaw).toHaveBeenCalledTimes(2);
   });
 });
 

@@ -10,9 +10,9 @@ describe('hashPassword', () => {
   });
 
   it('uses the documented cost factor', async () => {
-    // Cost is encoded as the second field of a bcrypt hash: $2b$12$.
+    // Cost is encoded as the third field of a bcrypt hash: $2b$12$.
     const hash = await hashPassword('AnotherSecret456!');
-    expect(hash.split('$')).toContain(String(BCRYPT_COST));
+    expect(hash.split('$')[2]).toBe(String(BCRYPT_COST).padStart(2, '0'));
   });
 
   it('produces distinct hashes for the same password (salt)', async () => {
