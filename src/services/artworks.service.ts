@@ -50,7 +50,7 @@ export async function listPublishedArtworks(
     const [items, total] = await Promise.all([
       prisma.artwork.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
         skip: (page - 1) * limit,
         take: limit,
       }),
