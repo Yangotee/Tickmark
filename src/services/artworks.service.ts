@@ -193,6 +193,7 @@ export async function getArtworkDetail(
       where: {
         category: artwork.category,
         published: true,
+        sold: false,
         id: { not: artworkId },
       },
       orderBy: { createdAt: 'desc' },
