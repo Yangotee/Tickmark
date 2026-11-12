@@ -8,6 +8,8 @@ const { prismaMock } = vi.hoisted(() => {
       create: vi.fn(),
       update: vi.fn(),
       findUnique: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
       delete: vi.fn(),
     },
     artworkMedia: {
@@ -29,6 +31,7 @@ import {
   createArtwork,
   deleteArtwork,
   getArtworkById,
+  listPublishedArtworks,
   setArtworkPublished,
   updateArtwork,
 } from './artworks.service';
@@ -136,14 +139,29 @@ describe('getArtworkById', () => {
   });
 });
 
+describe('listPublishedArtworks pagination', () => {
+  it('uses a stable tie-breaker when artworks share a creation time', async () => {
+    prismaMock.artwork.findMany.mockResolvedValue([]);
+    prismaMock.artwork.count.mockResolvedValue(0);
+
+    await listPublishedArtworks({}, 1, 20);
+
+    expect(prismaMock.artwork.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: 0,
+        take: 20,
+      }),
+    );
+  });
+});
+
 describe('setArtworkPublished — publishing workflow', () => {
   it('rejects publishing an artwork with no media', async () => {
     prismaMock.artwork.findUnique.mockResolvedValue(makeArtwork({ published: false }));
     prismaMock.artworkMedia.count.mockResolvedValue(0);
 
-    await expect(setArtworkPublished(OWNER_ID, ARTWORK_ID, true)).rejects.toBeInstanceOf(
-      AppError,
-    );
+    await expect(setArtworkPublished(OWNER_ID, ARTWORK_ID, true)).rejects.toBeInstanceOf(AppError);
     await expect(setArtworkPublished(OWNER_ID, ARTWORK_ID, true)).rejects.toMatchObject({
       code: 'UNPROCESSABLE_ENTITY',
     });
@@ -175,9 +193,9 @@ describe('setArtworkPublished — publishing workflow', () => {
   it('rejects publishing by a non-owner', async () => {
     prismaMock.artwork.findUnique.mockResolvedValue(makeArtwork({ userId: OWNER_ID }));
 
-    await expect(
-      setArtworkPublished(OTHER_USER_ID, ARTWORK_ID, true),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(setArtworkPublished(OTHER_USER_ID, ARTWORK_ID, true)).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
   });
 });
 
