@@ -87,7 +87,7 @@ const USERNAME_MAX_ATTEMPTS = 10;
 /** Bytes of randomness appended to the email-derived base name. */
 const USERNAME_SUFFIX_BYTES = 4;
 
-async function uniqueUsername(email: string): Promise<string> {
+export async function uniqueUsername(email: string): Promise<string> {
   const base = usernameFromEmail(email);
   for (let attempt = 0; attempt < USERNAME_MAX_ATTEMPTS; attempt += 1) {
     const candidate = `${base}_${randomBytes(USERNAME_SUFFIX_BYTES).toString('hex')}`;
@@ -98,10 +98,7 @@ async function uniqueUsername(email: string): Promise<string> {
   }
   // CONFLICT (not INTERNAL_ERROR): exhaustion is a transient collision the
   // caller can retry, not a server fault (#868).
-  throw new AppError(
-    'CONFLICT',
-    'Could not allocate a unique username, please retry',
-  );
+  throw new AppError('CONFLICT', 'Could not allocate a unique username, please retry');
 }
 
 export async function registerUser(input: RegisterInput): Promise<{

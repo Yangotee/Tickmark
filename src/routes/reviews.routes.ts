@@ -3,9 +3,7 @@
  */
 
 import { createFeatureRouter } from './router-factory';
-import { postReview, postReviewReport } from '@/controllers/reviews.controller';
 import {
-  getUserReviews,
   patchReview,
   postReview,
   postReviewReport,
@@ -43,6 +41,3 @@ reviewsRouter.post(
   validate({ params: reviewIdParamsSchema, body: reportReviewBodySchema }),
   postReviewReport,
 );
-
-// Note: public list by username is mounted from users/profiles routes if present.
-export { getUserReviews, listReviewsParamsSchema, listReviewsQuerySchema };

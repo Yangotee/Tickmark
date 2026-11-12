@@ -88,13 +88,16 @@ export async function findOrCreateUserByWalletPublicKey(
 ): Promise<{ user: PublicUser; tokens: TokenPair }> {
   const existingWallet = await prisma.wallet.findUnique({
     where: { publicKey },
-    include: { user: true },
   });
 
   let userRecord: User;
 
   if (existingWallet !== null) {
-    userRecord = existingWallet.user;
+    const linkedUser = await prisma.user.findUnique({ where: { id: existingWallet.userId } });
+    if (linkedUser === null) {
+      throw AppError.internal('Wallet is linked to a missing user');
+    }
+    userRecord = linkedUser;
   } else {
     const email = `wallet_${publicKey.toLowerCase()}@stellar.local`;
     const baseName = `wallet_${publicKey.slice(1, 9).toLowerCase()}`;

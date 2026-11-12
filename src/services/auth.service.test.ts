@@ -117,7 +117,7 @@ describe('registerUser', () => {
 
     // Registration succeeded despite 5 username collisions.
     expect(result.user.email).toBe('ada@example.com');
-    expect(result.user.username).toMatch(/^ada_[0-9a-f]{8}$/);
+    expect(prismaMock.user.create.mock.calls[0]![0].data.username).toMatch(/^ada_[0-9a-f]{8}$/);
     // email check + 6 username candidates
     expect(prismaMock.user.findUnique).toHaveBeenCalledTimes(7);
   });

@@ -24,9 +24,7 @@ import { logger } from '@/utils';
 
 /** How the worker moved the refund forward; surfaced for tests and logs. */
 export type CommissionRefundOutcome =
-  | 'COMPLETED'
-  | 'SKIPPED_ALREADY_PROCESSED'
-  | 'SKIPPED_NOT_REQUIRED';
+  'COMPLETED' | 'SKIPPED_ALREADY_PROCESSED' | 'SKIPPED_NOT_REQUIRED';
 
 /**
  * Records the intent to refund inside `cancelCommission`'s transaction: one
@@ -147,7 +145,7 @@ export async function processCommissionRefund(
 
 async function notifyParties(
   commission: Pick<Commission, 'id' | 'clientId' | 'artistId'>,
-  notification: { type: string; data: Record<string, unknown> },
+  notification: { type: string; data: Prisma.InputJsonObject },
 ): Promise<void> {
   await prisma.notification.createMany({
     data: [commission.clientId, commission.artistId].map((userId) => ({

@@ -39,15 +39,7 @@ import { createFeatureRouter } from './router-factory';
 import { getCommissionDisputes } from '@/controllers';
 import { authenticate, validate } from '@/middlewares';
 import { commissionDisputeListQuerySchema } from '@/validators';
- * Admin routes (v1) — review moderation (#834).
- */
-
-import { createFeatureRouter } from './router-factory';
-import {
-  getReportedReviews,
-  patchAdminReview,
-} from '@/controllers/review-moderation.controller';
-import { authenticate, validate } from '@/middlewares';
+import { getReportedReviews, patchAdminReview } from '@/controllers/review-moderation.controller';
 import {
   moderateReviewBodySchema,
   reportedReviewsQuerySchema,
@@ -61,6 +53,9 @@ adminRouter.get(
   authenticate,
   validate({ query: commissionDisputeListQuerySchema }),
   getCommissionDisputes,
+);
+
+adminRouter.get(
   '/reviews/reported',
   authenticate,
   validate({ query: reportedReviewsQuerySchema }),
