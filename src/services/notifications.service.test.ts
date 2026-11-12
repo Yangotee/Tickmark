@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { prismaMock, redisMock, envMock, enqueueEmailMock } = vi.hoisted(() => {
+const { prismaMock, redisMock, envMock, enqueueEmailMock, loggerMock } = vi.hoisted(() => {
   const notification = {
     create: vi.fn(),
     createMany: vi.fn(),
@@ -18,6 +18,7 @@ const { prismaMock, redisMock, envMock, enqueueEmailMock } = vi.hoisted(() => {
       smtp: undefined as { host: string; port: number; user?: string; pass?: string } | undefined,
     },
     enqueueEmailMock: vi.fn(),
+    loggerMock: { warn: vi.fn() },
   };
 });
 
@@ -25,6 +26,7 @@ vi.mock('@/config', () => ({ env: envMock }));
 vi.mock('@/services/prisma.service', () => ({ prisma: prismaMock }));
 vi.mock('./redis.service', () => ({ tryGetRedisClient: () => redisMock }));
 vi.mock('@/queues', () => ({ enqueueNotificationEmail: enqueueEmailMock }));
+vi.mock('@/utils', () => ({ logger: loggerMock }));
 
 import {
   createNotification,
@@ -100,6 +102,10 @@ describe('createNotification (#841)', () => {
       id: 'notif-1',
     });
     expect(enqueueEmailMock).not.toHaveBeenCalled();
+    expect(loggerMock.warn).toHaveBeenCalledWith(
+      'notification-email: enqueue failed; notification remains available in the app',
+      expect.objectContaining({ notificationId: 'notif-1', message: 'db down' }),
+    );
   });
 });
 
