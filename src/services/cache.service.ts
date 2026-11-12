@@ -9,6 +9,7 @@
  */
 
 import { tryGetRedisClient } from './redis.service';
+import { logger } from '@/utils';
 
 export interface CacheMetrics {
   hits: number;
@@ -64,11 +65,21 @@ export async function cached<T>(
   const namespace = namespaceOf(key);
   const hit = await redis.get(key);
   if (hit !== null) {
-    metricsFor(namespace).hits += 1;
-    return JSON.parse(hit) as T;
+    try {
+      const value = JSON.parse(hit) as T;
+      metricsFor(namespace).hits += 1;
+      return value;
+    } catch (error) {
+      metricsFor(namespace).misses += 1;
+      logger.warn('cache: invalid JSON entry; refetching', {
+        namespace,
+        errorName: error instanceof Error ? error.name : 'Unknown error',
+      });
+    }
+  } else {
+    metricsFor(namespace).misses += 1;
   }
 
-  metricsFor(namespace).misses += 1;
   const value = await fetcher();
   await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds);
   return value;

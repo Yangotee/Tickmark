@@ -8,12 +8,14 @@ const { redisMock } = vi.hoisted(() => ({
     scan: vi.fn(),
   },
 }));
+const { loggerMock } = vi.hoisted(() => ({ loggerMock: { warn: vi.fn() } }));
 
 vi.mock('./redis.service', () => ({
   tryGetRedisClient: () => redisMock,
 }));
+vi.mock('@/utils', () => ({ logger: loggerMock }));
 
-import { invalidateNamespace } from './cache.service';
+import { cached, invalidateNamespace } from './cache.service';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -47,6 +49,27 @@ describe('invalidateNamespace (#866)', () => {
     expect(redisMock.del).toHaveBeenCalledTimes(2);
     expect(redisMock.del.mock.calls[0]).toHaveLength(500);
     expect(redisMock.del.mock.calls[1]).toHaveLength(30);
+  });
+
+  describe('cached', () => {
+    it('refetches and replaces an invalid JSON entry', async () => {
+      redisMock.get.mockResolvedValue('{invalid');
+      const fetcher = vi.fn().mockResolvedValue({ value: 'fresh' });
+
+      await expect(cached('marketplace:page', 30, fetcher)).resolves.toEqual({ value: 'fresh' });
+
+      expect(fetcher).toHaveBeenCalledOnce();
+      expect(redisMock.set).toHaveBeenCalledWith(
+        'marketplace:page',
+        JSON.stringify({ value: 'fresh' }),
+        'EX',
+        30,
+      );
+      expect(loggerMock.warn).toHaveBeenCalledWith(
+        'cache: invalid JSON entry; refetching',
+        expect.objectContaining({ namespace: 'marketplace' }),
+      );
+    });
   });
 
   it('issues a single trailing DEL for a small keyspace', async () => {
